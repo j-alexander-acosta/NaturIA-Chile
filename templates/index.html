@@ -39,7 +39,19 @@
             </button>
         </div>
         
-        <!-- Zona de Upload -->
+        <!-- Selector de Modo -->
+        <div class="mode-selector">
+            <button class="mode-btn active" data-mode="foto" id="mode-foto">
+                <span>📷</span>
+                <span>Subir Foto</span>
+            </button>
+            <button class="mode-btn" data-mode="buscar" id="mode-buscar">
+                <span>🔎</span>
+                <span>Buscar por Nombre</span>
+            </button>
+        </div>
+        
+        <!-- Zona de Upload (Modo Foto) -->
         <div class="upload-zone" id="upload-zone">
             <div class="upload-icon">📷</div>
             <h2>¡Sube una foto!</h2>
@@ -49,6 +61,31 @@
                 <span>Elegir Foto</span>
             </button>
             <input type="file" id="file-input" accept="image/*" capture="environment">
+        </div>
+        
+        <!-- Zona de Búsqueda (Modo Buscar) -->
+        <div class="search-zone" id="search-zone" style="display: none;">
+            <div class="search-icon">🔎</div>
+            <h2>¿Qué quieres buscar?</h2>
+            <p>Escribe el nombre o usa el micrófono</p>
+            
+            <div class="search-input-container">
+                <input type="text" 
+                       id="search-input" 
+                       class="search-input" 
+                       placeholder="Ej: Chinita, Abejorro, Copihue..."
+                       autocomplete="off">
+                <button class="voice-btn" id="voice-btn" title="Buscar por voz">
+                    <span id="voice-icon">🎤</span>
+                </button>
+            </div>
+            
+            <button class="search-btn" id="search-btn">
+                <span>🔍</span>
+                <span>¡Buscar!</span>
+            </button>
+            
+            <p class="voice-status" id="voice-status"></p>
         </div>
         
         <!-- Preview de Imagen -->

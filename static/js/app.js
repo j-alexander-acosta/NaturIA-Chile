@@ -6,8 +6,11 @@
 // Estado de la aplicación
 const state = {
     selectedType: 'insecto',
+    selectedMode: 'foto',
     selectedFile: null,
-    isAnalyzing: false
+    isAnalyzing: false,
+    isListening: false,
+    recognition: null
 };
 
 // Elementos del DOM
@@ -16,10 +19,22 @@ const elements = {
     btnInsecto: document.getElementById('btn-insecto'),
     btnPlanta: document.getElementById('btn-planta'),
     
+    // Botones de modo
+    modeFoto: document.getElementById('mode-foto'),
+    modeBuscar: document.getElementById('mode-buscar'),
+    
     // Upload
     uploadZone: document.getElementById('upload-zone'),
     uploadBtn: document.getElementById('upload-btn'),
     fileInput: document.getElementById('file-input'),
+    
+    // Búsqueda
+    searchZone: document.getElementById('search-zone'),
+    searchInput: document.getElementById('search-input'),
+    searchBtn: document.getElementById('search-btn'),
+    voiceBtn: document.getElementById('voice-btn'),
+    voiceIcon: document.getElementById('voice-icon'),
+    voiceStatus: document.getElementById('voice-status'),
     
     // Preview
     previewContainer: document.getElementById('preview-container'),
@@ -28,6 +43,7 @@ const elements = {
     
     // Loader
     loaderContainer: document.getElementById('loader-container'),
+    loaderText: document.querySelector('.loader-text'),
     
     // Error
     errorContainer: document.getElementById('error-container'),
@@ -52,9 +68,12 @@ const elements = {
  */
 function init() {
     setupTypeSelector();
+    setupModeSelector();
     setupUploadZone();
+    setupSearchZone();
     setupAnalyzeButton();
     setupNewSearchButtons();
+    setupVoiceRecognition();
 }
 
 /**
@@ -77,7 +96,47 @@ function selectType(type) {
     
     // Actualizar ícono del upload
     const uploadIcon = elements.uploadZone.querySelector('.upload-icon');
-    uploadIcon.textContent = type === 'insecto' ? '🐛' : '🌿';
+    if (uploadIcon) {
+        uploadIcon.textContent = type === 'insecto' ? '🐛' : '🌿';
+    }
+    
+    // Actualizar placeholder del input de búsqueda
+    if (elements.searchInput) {
+        elements.searchInput.placeholder = type === 'insecto' 
+            ? 'Ej: Chinita, Abejorro, Madre de culebra...'
+            : 'Ej: Copihue, Araucaria, Nalca...';
+    }
+}
+
+/**
+ * Configura el selector de modo (foto/buscar)
+ */
+function setupModeSelector() {
+    elements.modeFoto.addEventListener('click', () => selectMode('foto'));
+    elements.modeBuscar.addEventListener('click', () => selectMode('buscar'));
+}
+
+/**
+ * Selecciona el modo de búsqueda
+ */
+function selectMode(mode) {
+    state.selectedMode = mode;
+    
+    // Actualizar clases de botones
+    elements.modeFoto.classList.toggle('active', mode === 'foto');
+    elements.modeBuscar.classList.toggle('active', mode === 'buscar');
+    
+    // Mostrar/ocultar zonas según el modo
+    if (mode === 'foto') {
+        elements.uploadZone.style.display = 'block';
+        elements.searchZone.style.display = 'none';
+    } else {
+        elements.uploadZone.style.display = 'none';
+        elements.searchZone.style.display = 'block';
+    }
+    
+    // Reiniciar estados
+    resetSearch();
 }
 
 /**
@@ -117,6 +176,176 @@ function setupUploadZone() {
             handleFile(files[0]);
         }
     });
+}
+
+/**
+ * Configura la zona de búsqueda por texto
+ */
+function setupSearchZone() {
+    // Botón de búsqueda
+    elements.searchBtn.addEventListener('click', performTextSearch);
+    
+    // Enter en el input
+    elements.searchInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            performTextSearch();
+        }
+    });
+    
+    // Botón de voz
+    elements.voiceBtn.addEventListener('click', toggleVoiceRecognition);
+}
+
+/**
+ * Configura el reconocimiento de voz
+ */
+function setupVoiceRecognition() {
+    // Verificar soporte de Web Speech API
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    
+    if (!SpeechRecognition) {
+        // No hay soporte, ocultar botón de voz
+        if (elements.voiceBtn) {
+            elements.voiceBtn.style.display = 'none';
+        }
+        return;
+    }
+    
+    // Crear instancia de reconocimiento
+    state.recognition = new SpeechRecognition();
+    state.recognition.lang = 'es-CL'; // Español de Chile
+    state.recognition.continuous = false;
+    state.recognition.interimResults = true;
+    
+    // Eventos del reconocimiento
+    state.recognition.onstart = () => {
+        state.isListening = true;
+        elements.voiceBtn.classList.add('listening');
+        elements.voiceIcon.textContent = '🔴';
+        elements.voiceStatus.textContent = '🎤 Escuchando... Habla ahora';
+    };
+    
+    state.recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+            .map(result => result[0].transcript)
+            .join('');
+        
+        elements.searchInput.value = transcript;
+        
+        // Si es resultado final, hacer la búsqueda
+        if (event.results[0].isFinal) {
+            elements.voiceStatus.textContent = `✅ Entendí: "${transcript}"`;
+            setTimeout(() => {
+                performTextSearch();
+            }, 500);
+        }
+    };
+    
+    state.recognition.onerror = (event) => {
+        console.error('Error de reconocimiento:', event.error);
+        stopVoiceRecognition();
+        
+        let errorMsg = '❌ Error al escuchar';
+        if (event.error === 'not-allowed') {
+            errorMsg = '❌ Permiso de micrófono denegado';
+        } else if (event.error === 'no-speech') {
+            errorMsg = '🤔 No escuché nada. ¿Puedes repetir?';
+        }
+        elements.voiceStatus.textContent = errorMsg;
+    };
+    
+    state.recognition.onend = () => {
+        stopVoiceRecognition();
+    };
+}
+
+/**
+ * Inicia o detiene el reconocimiento de voz
+ */
+function toggleVoiceRecognition() {
+    if (state.isListening) {
+        stopVoiceRecognition();
+    } else {
+        startVoiceRecognition();
+    }
+}
+
+/**
+ * Inicia el reconocimiento de voz
+ */
+function startVoiceRecognition() {
+    if (!state.recognition) {
+        elements.voiceStatus.textContent = '❌ Tu navegador no soporta reconocimiento de voz';
+        return;
+    }
+    
+    try {
+        state.recognition.start();
+    } catch (error) {
+        console.error('Error al iniciar reconocimiento:', error);
+        elements.voiceStatus.textContent = '❌ Error al iniciar el micrófono';
+    }
+}
+
+/**
+ * Detiene el reconocimiento de voz
+ */
+function stopVoiceRecognition() {
+    state.isListening = false;
+    elements.voiceBtn.classList.remove('listening');
+    elements.voiceIcon.textContent = '🎤';
+    
+    if (state.recognition) {
+        try {
+            state.recognition.stop();
+        } catch (error) {
+            // Ignorar errores al detener
+        }
+    }
+}
+
+/**
+ * Realiza búsqueda por texto
+ */
+async function performTextSearch() {
+    const query = elements.searchInput.value.trim();
+    
+    if (!query) {
+        showError('¡Escribe o di el nombre de lo que quieres buscar!');
+        return;
+    }
+    
+    if (state.isAnalyzing) return;
+    
+    state.isAnalyzing = true;
+    elements.loaderText.textContent = `🔍 Buscando información sobre "${query}"...`;
+    showSection('loader');
+    
+    try {
+        const response = await fetch('/buscar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                consulta: query,
+                tipo: state.selectedType
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            showError(data.error);
+        } else {
+            showResults(data);
+        }
+    } catch (error) {
+        console.error('Error en búsqueda:', error);
+        showError('¡Ups! No pude conectar con el servidor. ¿Tienes internet?');
+    } finally {
+        state.isAnalyzing = false;
+    }
 }
 
 /**
@@ -170,6 +399,7 @@ async function analyzeImage() {
     if (!state.selectedFile || state.isAnalyzing) return;
     
     state.isAnalyzing = true;
+    elements.loaderText.textContent = '🔍 Analizando tu imagen con IA...';
     showSection('loader');
     
     try {
@@ -272,7 +502,14 @@ function resetSearch() {
     state.selectedFile = null;
     elements.fileInput.value = '';
     elements.previewImage.src = '';
-    showSection('upload');
+    elements.searchInput.value = '';
+    elements.voiceStatus.textContent = '';
+    
+    if (state.selectedMode === 'foto') {
+        showSection('upload');
+    } else {
+        showSection('search');
+    }
 }
 
 /**
@@ -288,7 +525,8 @@ function showError(message) {
  */
 function showSection(section) {
     // Ocultar todas las secciones
-    elements.uploadZone.style.display = 'block';
+    elements.uploadZone.style.display = 'none';
+    elements.searchZone.style.display = 'none';
     elements.previewContainer.classList.remove('active');
     elements.loaderContainer.classList.remove('active');
     elements.errorContainer.classList.remove('active');
@@ -298,23 +536,19 @@ function showSection(section) {
         case 'upload':
             elements.uploadZone.style.display = 'block';
             break;
+        case 'search':
+            elements.searchZone.style.display = 'block';
+            break;
         case 'preview':
-            elements.uploadZone.style.display = 'none';
             elements.previewContainer.classList.add('active');
             break;
         case 'loader':
-            elements.uploadZone.style.display = 'none';
-            elements.previewContainer.classList.remove('active');
             elements.loaderContainer.classList.add('active');
             break;
         case 'error':
-            elements.uploadZone.style.display = 'none';
-            elements.loaderContainer.classList.remove('active');
             elements.errorContainer.classList.add('active');
             break;
         case 'result':
-            elements.uploadZone.style.display = 'none';
-            elements.loaderContainer.classList.remove('active');
             elements.resultContainer.classList.add('active');
             break;
     }

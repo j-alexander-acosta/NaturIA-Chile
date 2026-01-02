@@ -13,11 +13,10 @@ import io
 
 # Lista de modelos a probar (en orden de preferencia)
 MODELOS_DISPONIBLES = [
+    'gemini-flash-latest',
     'gemini-2.0-flash',
-    'gemini-1.5-flash',
-    'gemini-1.5-pro',
-    'gemini-pro-vision',
-    'gemini-pro',
+    'gemini-2.5-flash',
+    'gemini-pro-latest',
 ]
 
 # Configurar la API de Gemini
@@ -166,5 +165,148 @@ def analizar_imagen(image_data: bytes, tipo: str = "insecto") -> dict:
     except Exception as e:
         return {
             "error": f"Error al analizar la imagen: {str(e)}",
+            "tipo": tipo
+        }
+
+
+def obtener_prompt_busqueda(tipo: str, consulta: str) -> str:
+    """Obtiene el prompt para búsqueda por texto."""
+    if tipo == "insecto":
+        return f"""Eres un experto entomólogo chileno especializado en insectos de Chile.
+        El usuario está buscando información sobre: "{consulta}"
+        
+        Identifica el insecto y devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
+        {{
+            "nombre": "Nombre común en Chile (si tiene varios, usa el más conocido)",
+            "cientifico": "Nombre científico en latín",
+            "descripcion": "Explicación divertida y educativa para niños de 8 años, máximo 3 oraciones",
+            "habitat": "Dónde vive en Chile (regiones o zonas)",
+            "peligrosidad": "Baja/Media/Alta",
+            "dato_curioso": "Un dato sorprendente sobre este insecto",
+            "puntos": un número entero entre 10 y 100 basado en la rareza del insecto en Chile,
+            "imagen_sugerida": "Una descripción breve para buscar una imagen del insecto"
+        }}
+        
+        Si no puedes identificar el insecto o no existe, devuelve:
+        {{"error": "No encontré información sobre '{consulta}'. ¿Puedes verificar el nombre?"}}
+        
+        IMPORTANTE: Responde SOLO con el JSON, sin texto adicional ni markdown."""
+    else:
+        return f"""Eres un experto botánico chileno especializado en flora nativa de Chile.
+        El usuario está buscando información sobre: "{consulta}"
+        
+        Identifica la planta y devuelve ÚNICAMENTE un objeto JSON válido con esta estructura exacta:
+        {{
+            "nombre": "Nombre común en Chile",
+            "cientifico": "Nombre científico en latín",
+            "descripcion": "Explicación divertida y educativa para niños de 8 años, máximo 3 oraciones",
+            "habitat": "Dónde crece en Chile (regiones o zonas)",
+            "peligrosidad": "Baja/Media/Alta (si es venenosa o peligrosa)",
+            "dato_curioso": "Un dato sorprendente sobre esta planta",
+            "puntos": un número entero entre 10 y 100 basado en la rareza de la planta en Chile,
+            "imagen_sugerida": "Una descripción breve para buscar una imagen de la planta"
+        }}
+        
+        Si no puedes identificar la planta o no existe, devuelve:
+        {{"error": "No encontré información sobre '{consulta}'. ¿Puedes verificar el nombre?"}}
+        
+        IMPORTANTE: Responde SOLO con el JSON, sin texto adicional ni markdown."""
+
+
+def intentar_busqueda_con_modelo(model_name: str, prompt: str) -> tuple:
+    """
+    Intenta generar contenido de búsqueda con un modelo específico.
+    Retorna (éxito, resultado_o_error)
+    """
+    try:
+        model = genai.GenerativeModel(model_name)
+        response = model.generate_content(prompt)
+        return (True, response.text.strip())
+    except Exception as e:
+        error_str = str(e)
+        if "429" in error_str or "quota" in error_str.lower():
+            return (False, f"quota_exceeded:{model_name}")
+        if "404" in error_str or "not found" in error_str.lower():
+            return (False, f"model_not_found:{model_name}")
+        return (False, error_str)
+
+
+def buscar_por_texto(consulta: str, tipo: str = "insecto") -> dict:
+    """
+    Busca información sobre un insecto o planta por nombre.
+    
+    Args:
+        consulta: Nombre o descripción del insecto/planta a buscar
+        tipo: Tipo de búsqueda ("insecto" o "planta")
+    
+    Returns:
+        dict: Información sobre la especie encontrada
+    """
+    try:
+        configure_gemini()
+        
+        # Obtener el prompt de búsqueda
+        prompt = obtener_prompt_busqueda(tipo, consulta)
+        
+        # Intentar con cada modelo disponible
+        errores = []
+        modelos_con_cuota_excedida = []
+        
+        for modelo in MODELOS_DISPONIBLES:
+            exito, resultado = intentar_busqueda_con_modelo(modelo, prompt)
+            
+            if exito:
+                # Limpiar y parsear la respuesta
+                response_text = resultado
+                
+                # Remover posibles marcadores de código markdown
+                if response_text.startswith('```'):
+                    response_text = re.sub(r'^```(?:json)?\n?', '', response_text)
+                    response_text = re.sub(r'\n?```$', '', response_text)
+                
+                # Parsear JSON
+                result = json.loads(response_text)
+                
+                # Agregar metadata al resultado
+                result['tipo'] = tipo
+                result['modelo_usado'] = modelo
+                result['metodo'] = 'busqueda_texto'
+                
+                return result
+            else:
+                if "quota_exceeded" in resultado:
+                    modelos_con_cuota_excedida.append(modelo)
+                elif "model_not_found" in resultado:
+                    continue
+                else:
+                    errores.append(f"{modelo}: {resultado}")
+        
+        # Si todos los modelos fallaron por cuota
+        if len(modelos_con_cuota_excedida) == len(MODELOS_DISPONIBLES):
+            return {
+                "error": "⏰ ¡Has usado todas las consultas gratuitas de hoy! Intenta mañana.",
+                "tipo": tipo,
+                "codigo_error": "QUOTA_EXCEEDED"
+            }
+        
+        if errores:
+            return {
+                "error": f"No se pudo realizar la búsqueda: {errores[0]}",
+                "tipo": tipo
+            }
+        
+        return {
+            "error": "No hay modelos disponibles. Verifica tu API Key.",
+            "tipo": tipo
+        }
+        
+    except json.JSONDecodeError as e:
+        return {
+            "error": f"Error al procesar la respuesta: {str(e)}",
+            "tipo": tipo
+        }
+    except Exception as e:
+        return {
+            "error": f"Error en la búsqueda: {str(e)}",
             "tipo": tipo
         }

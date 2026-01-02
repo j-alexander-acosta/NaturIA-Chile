@@ -5,7 +5,7 @@ Explorador Chileno - Aplicación educativa para identificar insectos y plantas d
 import os
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
-from utils.gemini_client import analizar_imagen
+from utils.gemini_client import analizar_imagen, buscar_por_texto
 
 # Cargar variables de entorno
 load_dotenv()
@@ -71,6 +71,44 @@ def analizar():
         # Verificar si hubo error
         if 'error' in resultado:
             return jsonify(resultado), 200  # Devolvemos 200 porque el error es del contenido, no del servidor
+        
+        return jsonify(resultado), 200
+        
+    except Exception as e:
+        return jsonify({
+            'error': f'¡Algo salió mal! {str(e)}'
+        }), 500
+
+
+@app.route('/buscar', methods=['POST'])
+def buscar():
+    """
+    Endpoint para buscar insectos o plantas por nombre (texto o voz).
+    Recibe una consulta de texto y el tipo de búsqueda.
+    Devuelve información sobre la especie encontrada.
+    """
+    try:
+        # Obtener datos del JSON
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({
+                'error': '¡Ups! No recibí datos. Intenta de nuevo.'
+            }), 400
+        
+        consulta = data.get('consulta', '').strip()
+        tipo = data.get('tipo', 'insecto')
+        
+        if not consulta:
+            return jsonify({
+                'error': '¡Escribe o di el nombre de lo que quieres buscar!'
+            }), 400
+        
+        if tipo not in ['insecto', 'planta']:
+            tipo = 'insecto'
+        
+        # Buscar con Gemini
+        resultado = buscar_por_texto(consulta, tipo)
         
         return jsonify(resultado), 200
         

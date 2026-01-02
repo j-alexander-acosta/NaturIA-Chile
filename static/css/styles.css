@@ -6,55 +6,62 @@
 /* Variables CSS */
 :root {
     /* Colores principales - Inspirados en la naturaleza chilena */
-    --color-primary: #2E8B57;       /* Verde bosque */
-    --color-primary-light: #3CB371; /* Verde medio */
-    --color-primary-dark: #1D5A3A;  /* Verde oscuro */
-    
-    --color-secondary: #FF6B35;     /* Naranja cálido */
+    --color-primary: #2E8B57;
+    /* Verde bosque */
+    --color-primary-light: #3CB371;
+    /* Verde medio */
+    --color-primary-dark: #1D5A3A;
+    /* Verde oscuro */
+
+    --color-secondary: #FF6B35;
+    /* Naranja cálido */
     --color-secondary-light: #FF8C5A;
-    
-    --color-accent: #FFD93D;        /* Amarillo sol */
+
+    --color-accent: #FFD93D;
+    /* Amarillo sol */
     --color-accent-light: #FFE566;
-    
+
     /* Colores de fondo */
     --bg-gradient-start: #E8F5E9;
     --bg-gradient-end: #C8E6C9;
     --bg-card: rgba(255, 255, 255, 0.95);
-    
+
     /* Colores de texto */
     --text-primary: #1A1A2E;
     --text-secondary: #4A4A6A;
     --text-light: #FFFFFF;
-    
+
     /* Colores de estado */
     --color-success: #4CAF50;
     --color-warning: #FFC107;
     --color-danger: #E53935;
     --color-info: #2196F3;
-    
+
     /* Sombras */
     --shadow-soft: 0 4px 15px rgba(0, 0, 0, 0.1);
     --shadow-medium: 0 8px 30px rgba(0, 0, 0, 0.15);
     --shadow-strong: 0 15px 50px rgba(0, 0, 0, 0.2);
-    
+
     /* Bordes */
     --border-radius-sm: 12px;
     --border-radius-md: 20px;
     --border-radius-lg: 30px;
     --border-radius-full: 50%;
-    
+
     /* Transiciones */
     --transition-fast: 0.2s ease;
     --transition-medium: 0.3s ease;
     --transition-slow: 0.5s ease;
-    
+
     /* Fuentes */
     --font-family: 'Nunito', 'Segoe UI', sans-serif;
     --font-size-base: 16px;
 }
 
 /* Reset y Base */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
@@ -82,7 +89,7 @@ body::before {
     left: 0;
     right: 0;
     bottom: 0;
-    background-image: 
+    background-image:
         radial-gradient(circle at 20% 80%, rgba(46, 139, 87, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 80% 20%, rgba(255, 107, 53, 0.08) 0%, transparent 50%),
         radial-gradient(circle at 40% 40%, rgba(255, 217, 61, 0.08) 0%, transparent 40%);
@@ -179,6 +186,169 @@ body::before {
 
 .type-btn-icon {
     font-size: 1.5rem;
+}
+
+/* Selector de Modo */
+.mode-selector {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin: 15px 0 25px;
+    flex-wrap: wrap;
+}
+
+.mode-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 25px;
+    border: 2px solid var(--bg-gradient-end);
+    border-radius: var(--border-radius-md);
+    background: var(--bg-card);
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: all var(--transition-medium);
+}
+
+.mode-btn:hover {
+    border-color: var(--color-primary-light);
+    background: rgba(46, 139, 87, 0.05);
+}
+
+.mode-btn.active {
+    border-color: var(--color-primary);
+    background: rgba(46, 139, 87, 0.1);
+    color: var(--color-primary-dark);
+}
+
+/* Zona de Búsqueda */
+.search-zone {
+    background: var(--bg-card);
+    border-radius: var(--border-radius-md);
+    padding: 40px;
+    text-align: center;
+    box-shadow: var(--shadow-medium);
+    margin: 20px 0;
+    border: 3px solid var(--color-info);
+    animation: fadeInUp 0.8s ease;
+}
+
+.search-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+}
+
+.search-zone h2 {
+    font-size: 1.5rem;
+    color: var(--color-info);
+    margin-bottom: 10px;
+}
+
+.search-zone p {
+    color: var(--text-secondary);
+    margin-bottom: 25px;
+}
+
+.search-input-container {
+    display: flex;
+    gap: 10px;
+    max-width: 500px;
+    margin: 0 auto 20px;
+}
+
+.search-input {
+    flex: 1;
+    padding: 15px 20px;
+    border: 2px solid var(--bg-gradient-end);
+    border-radius: var(--border-radius-md);
+    font-size: 1.1rem;
+    font-family: var(--font-family);
+    color: var(--text-primary);
+    transition: all var(--transition-medium);
+}
+
+.search-input:focus {
+    outline: none;
+    border-color: var(--color-info);
+    box-shadow: 0 0 0 4px rgba(33, 150, 243, 0.2);
+}
+
+.search-input::placeholder {
+    color: #999;
+}
+
+.voice-btn {
+    width: 55px;
+    height: 55px;
+    border: none;
+    border-radius: var(--border-radius-full);
+    background: linear-gradient(135deg, #E53935 0%, #EF5350 100%);
+    cursor: pointer;
+    font-size: 1.5rem;
+    transition: all var(--transition-medium);
+    box-shadow: 0 4px 15px rgba(229, 57, 53, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.voice-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(229, 57, 53, 0.5);
+}
+
+.voice-btn.listening {
+    animation: pulse-voice 1s infinite;
+    background: linear-gradient(135deg, #4CAF50 0%, #66BB6A 100%);
+    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.5);
+}
+
+@keyframes pulse-voice {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+.search-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px 40px;
+    background: linear-gradient(135deg, var(--color-info) 0%, #42A5F5 100%);
+    color: var(--text-light);
+    border: none;
+    border-radius: var(--border-radius-lg);
+    font-size: 1.2rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all var(--transition-medium);
+    box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+}
+
+.search-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(33, 150, 243, 0.5);
+}
+
+.search-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.voice-status {
+    margin-top: 15px;
+    font-size: 0.95rem;
+    color: var(--color-info);
+    min-height: 1.5em;
 }
 
 /* Zona de Upload */
@@ -537,8 +707,13 @@ body::before {
 
 /* Animaciones */
 @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes fadeInUp {
@@ -546,6 +721,7 @@ body::before {
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -557,6 +733,7 @@ body::before {
         opacity: 0;
         transform: translateY(-30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -564,24 +741,63 @@ body::before {
 }
 
 @keyframes bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-    40% { transform: translateY(-15px); }
-    60% { transform: translateY(-7px); }
+
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+        transform: translateY(0);
+    }
+
+    40% {
+        transform: translateY(-15px);
+    }
+
+    60% {
+        transform: translateY(-7px);
+    }
 }
 
 @keyframes pulse {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.6; }
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
 }
 
 @keyframes spin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-    20%, 40%, 60%, 80% { transform: translateX(5px); }
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-5px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(5px);
+    }
 }
 
 /* Responsive */
@@ -589,37 +805,37 @@ body::before {
     .logo h1 {
         font-size: 1.8rem;
     }
-    
+
     .logo-icon {
         font-size: 2.5rem;
     }
-    
+
     .type-selector {
         flex-direction: column;
     }
-    
+
     .type-btn {
         width: 100%;
         justify-content: center;
     }
-    
+
     .upload-zone {
         padding: 30px 20px;
     }
-    
+
     .upload-icon {
         font-size: 3rem;
     }
-    
+
     .result-header {
         flex-direction: column;
         text-align: center;
     }
-    
+
     .result-title h2 {
         font-size: 1.5rem;
     }
-    
+
     .points-badge {
         flex-direction: column;
         gap: 5px;
@@ -633,7 +849,10 @@ body::before {
 
 /* Accesibilidad */
 @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+
+    *,
+    *::before,
+    *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;

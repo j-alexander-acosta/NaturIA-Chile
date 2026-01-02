@@ -1,6 +1,6 @@
-# 🦋 Explorador Chileno
+# 🌿 NaturIA Chile
 
-Una aplicación web educativa para niños que identifica insectos y plantas de Chile usando inteligencia artificial.
+Aplicación web que identifica insectos y plantas de Chile usando Inteligencia Artificial.
 
 ![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)
 ![Flask](https://img.shields.io/badge/Flask-3.0+-green.svg)
@@ -8,12 +8,14 @@ Una aplicación web educativa para niños que identifica insectos y plantas de C
 
 ## 🎯 Características
 
-- 🐛 **Identificación de Insectos**: Sube una foto y descubre qué insecto es
+- 🐛 **Identificación de Insectos**: Sube una foto o busca por nombre
 - 🌿 **Identificación de Plantas**: Reconoce flora nativa de Chile
+- 🎤 **Búsqueda por Voz**: Usa el micrófono para buscar especies
+- 📷 **Análisis de Imágenes**: Identifica especies desde fotos
+- 🖼️ **Imágenes de Wikipedia**: Muestra fotos reales de las especies
 - 🎮 **Sistema de Puntos**: Gana puntos según la rareza de la especie
 - ⚠️ **Indicador de Peligrosidad**: Sabe si es seguro acercarse
 - 📱 **Diseño Responsive**: Funciona en móviles y tablets
-- 🧒 **Para Niños**: Explicaciones divertidas y educativas
 
 ## 🚀 Instalación
 
@@ -26,8 +28,8 @@ Una aplicación web educativa para niños que identifica insectos y plantas de C
 
 1. **Clona el repositorio**
    ```bash
-   git clone https://github.com/tu-usuario/explorador-chileno.git
-   cd explorador-chileno
+   git clone https://github.com/j-alexander-acosta/Explorador-Chileno.git
+   cd Explorador-Chileno
    ```
 
 2. **Crea el entorno virtual**
@@ -60,21 +62,22 @@ Una aplicación web educativa para niños que identifica insectos y plantas de C
 ## 📁 Estructura del Proyecto
 
 ```
-explorador-chileno/
+NaturIA-Chile/
 ├── static/
 │   ├── css/
-│   │   └── styles.css      # Estilos modernos
+│   │   └── styles.css          # Estilos modernos
 │   └── js/
-│       └── app.js          # Lógica del frontend
+│       └── app.js              # Lógica del frontend
 ├── templates/
-│   └── index.html          # Interfaz principal
+│   └── index.html              # Interfaz principal
 ├── utils/
 │   ├── __init__.py
-│   └── gemini_client.py    # Cliente de Gemini AI
-├── .env.example            # Ejemplo de variables de entorno
+│   ├── gemini_client.py        # Cliente de Gemini AI
+│   └── image_search.py         # Búsqueda de imágenes Wikipedia
+├── .env.example                # Ejemplo de variables de entorno
 ├── .gitignore
-├── app.py                  # Servidor Flask
-├── requirements.txt        # Dependencias
+├── app.py                      # Servidor Flask
+├── requirements.txt            # Dependencias
 └── README.md
 ```
 
@@ -82,19 +85,23 @@ explorador-chileno/
 
 - **Backend**: Python + Flask
 - **Frontend**: HTML5, CSS3, JavaScript Vanilla
-- **IA**: Google Gemini 2.0 Flash
-- **Imágenes**: Pillow
-
-## 🎨 Capturas de Pantalla
-
-*Próximamente...*
+- **IA**: Google Gemini Flash
+- **Imágenes**: Wikipedia API + Pillow
+- **Voz**: Web Speech API
 
 ## 📝 Uso
 
-1. Selecciona si quieres identificar un **Insecto** o una **Planta**
-2. Sube una foto desde tu dispositivo o cámara
-3. Haz clic en **¡Analizar!**
-4. ¡Descubre información fascinante sobre la especie!
+### Modo Foto
+1. Selecciona **Insectos** o **Plantas**
+2. Haz clic en **Subir Foto**
+3. Sube una imagen desde tu dispositivo
+4. Haz clic en **¡Analizar!**
+
+### Modo Búsqueda
+1. Selecciona **Insectos** o **Plantas**
+2. Haz clic en **Buscar por Nombre**
+3. Escribe el nombre o usa el 🎤 micrófono
+4. Haz clic en **¡Buscar!**
 
 ## 🤝 Contribuir
 
@@ -108,10 +115,12 @@ Las contribuciones son bienvenidas. Por favor:
 
 ## 📄 Licencia
 
-Este proyecto está bajo la Licencia MIT. Ver [LICENSE](LICENSE) para más detalles.
+© 2026 NaturIA Chile. Todos los derechos reservados.
 
 ## 👨‍💻 Autor
 
 **J. Alexander Acosta Z.**
 
-Desarrollado con ❤️ para los pequeños exploradores de Chile.
+---
+
+*Desarrollado con 🌿 para los amantes de la naturaleza chilena.*

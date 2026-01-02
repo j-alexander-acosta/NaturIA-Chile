@@ -52,6 +52,8 @@ const elements = {
     
     // Resultados
     resultContainer: document.getElementById('result-container'),
+    resultImageContainer: document.getElementById('result-image-container'),
+    resultSpeciesImage: document.getElementById('result-species-image'),
     resultIcon: document.getElementById('result-icon'),
     resultName: document.getElementById('result-name'),
     resultScientific: document.getElementById('result-scientific'),
@@ -433,6 +435,22 @@ async function analyzeImage() {
 function showResults(data) {
     // Ícono según tipo
     elements.resultIcon.textContent = data.tipo === 'planta' ? '🌿' : '🐛';
+    
+    // Imagen de la especie (si está disponible)
+    if (data.imagen_url && elements.resultImageContainer && elements.resultSpeciesImage) {
+        elements.resultSpeciesImage.src = data.imagen_url;
+        elements.resultSpeciesImage.alt = data.nombre || 'Imagen de la especie';
+        elements.resultImageContainer.style.display = 'block';
+        
+        // Manejar error de carga de imagen
+        elements.resultSpeciesImage.onerror = () => {
+            elements.resultImageContainer.style.display = 'none';
+        };
+    } else {
+        if (elements.resultImageContainer) {
+            elements.resultImageContainer.style.display = 'none';
+        }
+    }
     
     // Información básica
     elements.resultName.textContent = data.nombre || 'Espécimen desconocido';

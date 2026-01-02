@@ -1,11 +1,13 @@
 """
-Explorador Chileno - Aplicación educativa para identificar insectos y plantas de Chile
+NaturIA Chile - Identifica insectos y plantas de Chile con IA
+© 2026 J. Alexander Acosta Z. Todos los derechos reservados.
 """
 
 import os
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 from utils.gemini_client import analizar_imagen, buscar_por_texto
+from utils.image_search import obtener_imagen_especie
 
 # Cargar variables de entorno
 load_dotenv()
@@ -109,6 +111,15 @@ def buscar():
         
         # Buscar con Gemini
         resultado = buscar_por_texto(consulta, tipo)
+        
+        # Si no hay error, buscar imagen
+        if 'error' not in resultado:
+            imagen_url = obtener_imagen_especie(
+                resultado.get('cientifico', ''),
+                resultado.get('nombre', ''),
+                tipo
+            )
+            resultado['imagen_url'] = imagen_url
         
         return jsonify(resultado), 200
         

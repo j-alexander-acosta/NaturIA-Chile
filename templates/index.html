@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Explorador Chileno - Descubre y aprende sobre los insectos y plantas de Chile con inteligencia artificial">
+    <meta name="theme-color" content="#2E8B57">
+    
+    <title>🦋 Explorador Chileno - Descubre la Naturaleza de Chile</title>
+    
+    <!-- Google Fonts - Nunito -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Estilos -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <span class="logo-icon">🔍</span>
+                <h1>Explorador Chileno</h1>
+            </div>
+            <p>¡Descubre los increíbles insectos y plantas de Chile!</p>
+        </header>
+        
+        <!-- Selector de Tipo -->
+        <div class="type-selector">
+            <button class="type-btn active" data-type="insecto" id="btn-insecto">
+                <span class="type-btn-icon">🐛</span>
+                <span>Insectos</span>
+            </button>
+            <button class="type-btn planta" data-type="planta" id="btn-planta">
+                <span class="type-btn-icon">🌿</span>
+                <span>Plantas</span>
+            </button>
+        </div>
+        
+        <!-- Zona de Upload -->
+        <div class="upload-zone" id="upload-zone">
+            <div class="upload-icon">📷</div>
+            <h2>¡Sube una foto!</h2>
+            <p>Arrastra una imagen aquí o haz clic para seleccionar</p>
+            <button class="upload-btn" id="upload-btn">
+                <span>📸</span>
+                <span>Elegir Foto</span>
+            </button>
+            <input type="file" id="file-input" accept="image/*" capture="environment">
+        </div>
+        
+        <!-- Preview de Imagen -->
+        <div class="preview-container" id="preview-container">
+            <div class="preview-card">
+                <img src="" alt="Vista previa" class="preview-image" id="preview-image">
+                <button class="analyze-btn" id="analyze-btn">
+                    <span>🔬</span>
+                    <span>¡Analizar!</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Loader -->
+        <div class="loader-container" id="loader-container">
+            <div class="loader"></div>
+            <p class="loader-text">🔍 Analizando tu imagen con IA...</p>
+        </div>
+        
+        <!-- Error -->
+        <div class="error-container" id="error-container">
+            <div class="error-icon">😕</div>
+            <h3>¡Ups! Algo salió mal</h3>
+            <p id="error-message">No pudimos analizar la imagen.</p>
+            <button class="new-search-btn" id="error-retry-btn">
+                <span>🔄</span>
+                <span>Intentar de nuevo</span>
+            </button>
+        </div>
+        
+        <!-- Resultados -->
+        <div class="result-container" id="result-container">
+            <div class="result-card">
+                <div class="result-header">
+                    <div class="result-icon" id="result-icon">🐛</div>
+                    <div class="result-title">
+                        <h2 id="result-name">Nombre del espécimen</h2>
+                        <p class="scientific-name" id="result-scientific">Nombre científico</p>
+                    </div>
+                </div>
+                
+                <div class="result-body">
+                    <!-- Descripción -->
+                    <div class="result-section">
+                        <h3><span>📖</span> ¿Qué es?</h3>
+                        <p id="result-description">Descripción del espécimen...</p>
+                    </div>
+                    
+                    <!-- Hábitat -->
+                    <div class="result-section">
+                        <h3><span>🗺️</span> ¿Dónde vive en Chile?</h3>
+                        <p id="result-habitat">Información del hábitat...</p>
+                    </div>
+                    
+                    <!-- Dato Curioso -->
+                    <div class="result-section">
+                        <h3><span>💡</span> Dato Curioso</h3>
+                        <p id="result-curiosity">Dato curioso...</p>
+                    </div>
+                    
+                    <!-- Peligrosidad -->
+                    <div class="result-section">
+                        <h3><span>⚠️</span> ¿Es peligroso?</h3>
+                        <div class="danger-indicator baja" id="result-danger">
+                            <span>✅</span>
+                            <span>Peligrosidad Baja</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Puntos -->
+                    <div class="points-badge">
+                        <span class="points-icon">⭐</span>
+                        <span class="points-value" id="result-points">50</span>
+                        <span class="points-label">puntos de rareza</span>
+                    </div>
+                </div>
+                
+                <button class="new-search-btn" id="new-search-btn">
+                    <span>🔍</span>
+                    <span>Buscar otro</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="footer">
+            <p>Hecho con ❤️ para los pequeños exploradores de Chile</p>
+        </footer>
+    </div>
+    
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

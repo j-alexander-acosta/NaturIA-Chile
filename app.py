@@ -22,7 +22,9 @@ app = Flask(__name__)
 # Configuración
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'naturia-chile-super-secret-key')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Límite de 16MB para uploads
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///naturia.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'sqlite:///naturia.db')
+if app.config['SQLALCHEMY_DATABASE_URI'].startswith("postgres://"):
+    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace("postgres://", "postgresql://", 1)
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -377,6 +379,7 @@ if __name__ == '__main__':
         print("⚠️  ADVERTENCIA: No se encontró GOOGLE_API_KEY en el archivo .env")
         print("   Crea un archivo .env con tu API key de Google Gemini")
     
-    # Ejecutar en modo debug para desarrollo
+    # Ejecutar servidor
+    debug_mode = os.getenv('FLASK_DEBUG', 'False').lower() == 'true'
     port = int(os.environ.get('PORT', 5001))
-    app.run(debug=True, host='0.0.0.0', port=port)
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)

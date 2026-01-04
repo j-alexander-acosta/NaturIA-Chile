@@ -676,32 +676,97 @@ function setupSoundPlayer() {
     elements.speciesAudio.addEventListener('ended', () => {
         stopSound();
     });
+    
+    elements.speciesAudio.addEventListener('error', (e) => {
+        console.error('Error de audio:', e);
+        stopSound();
+        if (elements.soundSource) {
+            elements.soundSource.textContent = '❌ Error al cargar el audio. Intenta de nuevo.';
+            elements.soundSource.style.color = 'var(--error-color, #e74c3c)';
+        }
+    });
 }
 
-function showSoundPlayer(data) {
+async function showSoundPlayer(data) {
     if (!elements.soundSection) return;
     
-    // Por ahora, mostrar sonido solo si hay URL o es un ave/insecto con sonido conocido
-    const hasSonido = data.sonido_url || 
-        (data.tipo === 'insecto' && data.nombre && 
-         ['grillo', 'cigarra', 'chicharra'].some(s => 
-            data.nombre.toLowerCase().includes(s)));
+    // Ocultar inicialmente mientras buscamos
+    elements.soundSection.style.display = 'none';
     
-    if (hasSonido) {
-        elements.soundSection.style.display = 'block';
-        elements.soundName.textContent = `Sonido de ${data.nombre || 'la especie'}`;
+    // Las plantas no tienen sonido
+    if (data.tipo === 'planta') {
+        return;
+    }
+    
+    // Si ya tiene URL de sonido, usarla directamente
+    if (data.sonido_url) {
+        displaySoundPlayer(data.sonido_url, data.nombre, 'Archivo local');
+        return;
+    }
+    
+    // Buscar sonido en la API
+    try {
+        const response = await fetch('/sonido', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                nombre: data.nombre || '',
+                cientifico: data.cientifico || '',
+                tipo: data.tipo || 'insecto'
+            })
+        });
         
-        if (data.sonido_url) {
-            elements.speciesAudio.src = `/static/sounds/${data.sonido_url}`;
-            elements.soundSource.textContent = 'Fuente: Archivo local';
-        } else {
-            // Placeholder para sonidos futuros
-            elements.soundSection.style.display = 'none';
+        const result = await response.json();
+        
+        if (result.encontrado && result.sonido) {
+            const sonido = result.sonido;
+            displaySoundPlayer(
+                sonido.url, 
+                data.nombre, 
+                `${sonido.fuente} • ${sonido.tipo_sonido || 'canto'}`,
+                sonido
+            );
         }
-    } else {
-        elements.soundSection.style.display = 'none';
+    } catch (error) {
+        console.log('No se pudo buscar sonido:', error);
+        // Silenciosamente fallar - no mostrar la sección de sonido
     }
 }
+
+function displaySoundPlayer(url, nombre, fuente, metadata = null) {
+    if (!url || !elements.soundSection) return;
+    
+    elements.soundSection.style.display = 'block';
+    elements.soundName.textContent = `Sonido de ${nombre || 'la especie'}`;
+    
+    // Mostrar información de la fuente
+    if (elements.soundSource) {
+        let sourceText = `Fuente: ${fuente}`;
+        if (metadata) {
+            if (metadata.calidad) {
+                sourceText += ` • Calidad: ${metadata.calidad}`;
+            }
+            if (metadata.ubicacion && metadata.ubicacion !== 'Desconocido') {
+                sourceText += ` • ${metadata.ubicacion}`;
+            }
+        }
+        elements.soundSource.textContent = sourceText;
+    }
+    
+    // Configurar el audio
+    elements.speciesAudio.src = url;
+    
+    // Agregar atributo crossorigin para URLs externas
+    if (url.startsWith('http')) {
+        elements.speciesAudio.crossOrigin = 'anonymous';
+    }
+    
+    // Reset del estado
+    stopSound();
+}
+
 
 function toggleSound() {
     if (state.isPlaying) {
@@ -801,6 +866,12 @@ function saveToHistory(data) {
     }
 }
 
+// Generar placeholder SVG seguro para historial
+function getPlaceholderSvg(tipo) {
+    const emoji = tipo === 'planta' ? '🌿' : '🐞';
+    return `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="45" fill="#2E8B57"/><text x="50" y="60" font-size="40" text-anchor="middle" fill="white">${emoji}</text></svg>`)}`;
+}
+
 function renderHistory(history) {
     if (!elements.historyList || !elements.historyCount) return;
     
@@ -817,20 +888,27 @@ function renderHistory(history) {
         return;
     }
     
-    elements.historyList.innerHTML = history.map(entry => `
-        <div class="history-item" data-id="${entry.id}">
-            <img class="history-item-image" 
-                 src="${entry.imagen_url || 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ccircle cx=%2750%27 cy=%2750%27 r=%2745%27 fill=%27%232E8B57%27/%3E%3Ctext x=%2750%27 y=%2760%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27white%27%3E${entry.tipo === 'planta' ? '🌿' : '🐞'}%3C/text%3E%3C/svg%3E'}"
-                 alt="${entry.nombre}"
-                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ccircle cx=%2750%27 cy=%2750%27 r=%2745%27 fill=%27%232E8B57%27/%3E%3Ctext x=%2750%27 y=%2760%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27white%27%3E🐞%3C/text%3E%3C/svg%3E'">
-            <div class="history-item-info">
-                <div class="history-item-name">${entry.nombre}</div>
-                <div class="history-item-scientific">${entry.cientifico || ''}</div>
-                <div class="history-item-date">${formatDate(entry.fecha)}</div>
+    const defaultPlaceholder = getPlaceholderSvg('insecto');
+    
+    elements.historyList.innerHTML = history.map(entry => {
+        const placeholder = getPlaceholderSvg(entry.tipo);
+        const imageSrc = entry.imagen_url || placeholder;
+        
+        return `
+            <div class="history-item" data-id="${entry.id}">
+                <img class="history-item-image" 
+                     src="${imageSrc}"
+                     alt="${entry.nombre}"
+                     onerror="this.src='${defaultPlaceholder}'">
+                <div class="history-item-info">
+                    <div class="history-item-name">${entry.nombre}</div>
+                    <div class="history-item-scientific">${entry.cientifico || ''}</div>
+                    <div class="history-item-date">${formatDate(entry.fecha)}</div>
+                </div>
+                <div class="history-item-type">${entry.tipo === 'planta' ? '🌿' : '🐛'}</div>
             </div>
-            <div class="history-item-type">${entry.tipo === 'planta' ? '🌿' : '🐛'}</div>
-        </div>
-    `).join('');
+        `;
+    }).join('');
     
     // Agregar eventos click
     elements.historyList.querySelectorAll('.history-item').forEach(item => {

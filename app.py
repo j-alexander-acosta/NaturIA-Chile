@@ -8,6 +8,7 @@ from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 from utils.gemini_client import analizar_imagen, buscar_por_texto
 from utils.image_search import obtener_imagen_especie
+from utils.sound_search import buscar_sonido
 
 # Cargar variables de entorno
 load_dotenv()
@@ -137,7 +138,47 @@ def buscar():
         }), 500
 
 
+@app.route('/sonido', methods=['POST'])
+def obtener_sonido():
+    """
+    Endpoint para buscar sonido de una especie.
+    Utiliza la API de Xeno-Canto para aves chilenas.
+    """
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No se recibieron datos'}), 400
+        
+        nombre = data.get('nombre', '').strip()
+        cientifico = data.get('cientifico', '').strip()
+        tipo = data.get('tipo', 'insecto')
+        
+        if not nombre and not cientifico:
+            return jsonify({'error': 'Se requiere nombre o nombre científico'}), 400
+        
+        # Buscar sonido
+        resultado = buscar_sonido(nombre, cientifico, tipo)
+        
+        if resultado:
+            return jsonify({
+                'encontrado': True,
+                'sonido': resultado
+            }), 200
+        else:
+            return jsonify({
+                'encontrado': False,
+                'mensaje': 'No se encontró sonido para esta especie'
+            }), 200
+            
+    except Exception as e:
+        return jsonify({
+            'error': f'Error buscando sonido: {str(e)}'
+        }), 500
+
+
 @app.route('/salud')
+
 def health_check():
     """Endpoint para verificar que el servidor está funcionando."""
     return jsonify({

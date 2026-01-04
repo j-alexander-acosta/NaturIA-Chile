@@ -6,6 +6,13 @@
     <meta name="description" content="NaturIA Chile - Identifica insectos y plantas de Chile con inteligencia artificial">
     <meta name="theme-color" content="#2E8B57">
     
+    <!-- PWA Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="NaturIA Chile">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+    
     <title>🌿 NaturIA Chile - Identifica Fauna y Flora con IA</title>
     
     <!-- Google Fonts - Nunito -->
@@ -17,6 +24,12 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 </head>
 <body>
+    <!-- Botón Toggle de Tema -->
+    <button class="theme-toggle" id="theme-toggle" title="Cambiar tema">
+        <span class="icon-moon">🌙</span>
+        <span class="icon-sun">☀️</span>
+    </button>
+    
     <div class="container">
         <!-- Header -->
         <header class="header">
@@ -88,6 +101,24 @@
             <p class="voice-status" id="voice-status"></p>
         </div>
         
+        <!-- Historial de Búsquedas -->
+        <div class="history-section" id="history-section">
+            <button class="history-toggle" id="history-toggle">
+                <span>📚</span>
+                <span>Mi Historial</span>
+                <span id="history-count"></span>
+            </button>
+            <div class="history-container" id="history-container">
+                <div class="history-list" id="history-list">
+                    <!-- Se llena dinámicamente -->
+                </div>
+                <button class="history-clear-btn" id="history-clear-btn">
+                    <span>🗑️</span>
+                    <span>Limpiar historial</span>
+                </button>
+            </div>
+        </div>
+        
         <!-- Preview de Imagen -->
         <div class="preview-container" id="preview-container">
             <div class="preview-card">
@@ -141,8 +172,42 @@
                     
                     <!-- Hábitat -->
                     <div class="result-section">
-                        <h3><span>🗺️</span> ¿Dónde vive en Chile?</h3>
+                        <h3><span>🌎</span> ¿Dónde vive en Chile?</h3>
                         <p id="result-habitat">Información del hábitat...</p>
+                    </div>
+                    
+                    <!-- Mapa de Distribución -->
+                    <div class="map-section" id="map-section" style="display: none;">
+                        <h3><span>🗺️</span> Mapa de Distribución</h3>
+                        <div class="chile-map-container">
+                            <div class="chile-map" id="chile-map">
+                                <!-- SVG del mapa se insertará aquí -->
+                            </div>
+                            <div class="regions-list">
+                                <h4>Presente en:</h4>
+                                <div class="regions-tags" id="regions-tags">
+                                    <!-- Tags de regiones -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Reproductor de Sonido -->
+                    <div class="sound-section" id="sound-section" style="display: none;">
+                        <h3><span>🔊</span> Escucha su sonido</h3>
+                        <div class="sound-player" id="sound-player">
+                            <button class="sound-play-btn" id="sound-play-btn">
+                                <span id="sound-play-icon">▶️</span>
+                            </button>
+                            <div class="sound-info">
+                                <div class="sound-name" id="sound-name">Sonido de la especie</div>
+                                <div class="sound-source" id="sound-source">Fuente: Xeno-Canto</div>
+                                <div class="sound-progress">
+                                    <div class="sound-progress-bar" id="sound-progress-bar"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <audio id="species-audio" preload="none"></audio>
                     </div>
                     
                     <!-- Dato Curioso -->
@@ -182,7 +247,34 @@
         </footer>
     </div>
     
+    <!-- PWA Install Banner -->
+    <div class="pwa-install-banner" id="pwa-install-banner">
+        <div class="pwa-install-content">
+            <span class="pwa-install-icon">📲</span>
+            <div class="pwa-install-text">
+                <h4>¡Instala NaturIA Chile!</h4>
+                <p>Agrega la app a tu pantalla de inicio para usar sin conexión</p>
+            </div>
+        </div>
+        <div class="pwa-install-actions">
+            <button class="pwa-install-btn primary" id="pwa-install-accept">Instalar</button>
+            <button class="pwa-install-btn secondary" id="pwa-install-dismiss">Ahora no</button>
+        </div>
+    </div>
+    
     <!-- JavaScript -->
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/sw.js')
+                    .then(reg => console.log('✅ Service Worker registrado'))
+                    .catch(err => console.log('❌ Error SW:', err));
+            });
+        }
+    </script>
 </body>
 </html>
+

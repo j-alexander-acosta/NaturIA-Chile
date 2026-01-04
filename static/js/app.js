@@ -1,20 +1,32 @@
 /**
- * Explorador Chileno - JavaScript Principal
- * Maneja la interacción del usuario y comunicación con el backend
+ * NaturIA Chile - JavaScript Principal
+ * Maneja la interacción del usuario, historial, tema oscuro, mapa y sonidos
  */
 
-// Estado de la aplicación
+// ========================================
+// ESTADO DE LA APLICACIÓN
+// ========================================
 const state = {
     selectedType: 'insecto',
     selectedMode: 'foto',
     selectedFile: null,
     isAnalyzing: false,
     isListening: false,
-    recognition: null
+    recognition: null,
+    darkMode: false,
+    historyOpen: false,
+    currentAudio: null,
+    isPlaying: false,
+    deferredPrompt: null // Para PWA install prompt
 };
 
-// Elementos del DOM
+// ========================================
+// ELEMENTOS DEL DOM
+// ========================================
 const elements = {
+    // Tema
+    themeToggle: document.getElementById('theme-toggle'),
+    
     // Botones de tipo
     btnInsecto: document.getElementById('btn-insecto'),
     btnPlanta: document.getElementById('btn-planta'),
@@ -35,6 +47,14 @@ const elements = {
     voiceBtn: document.getElementById('voice-btn'),
     voiceIcon: document.getElementById('voice-icon'),
     voiceStatus: document.getElementById('voice-status'),
+    
+    // Historial
+    historySection: document.getElementById('history-section'),
+    historyToggle: document.getElementById('history-toggle'),
+    historyContainer: document.getElementById('history-container'),
+    historyList: document.getElementById('history-list'),
+    historyClearBtn: document.getElementById('history-clear-btn'),
+    historyCount: document.getElementById('history-count'),
     
     // Preview
     previewContainer: document.getElementById('preview-container'),
@@ -62,13 +82,77 @@ const elements = {
     resultCuriosity: document.getElementById('result-curiosity'),
     resultDanger: document.getElementById('result-danger'),
     resultPoints: document.getElementById('result-points'),
-    newSearchBtn: document.getElementById('new-search-btn')
+    newSearchBtn: document.getElementById('new-search-btn'),
+    
+    // Mapa
+    mapSection: document.getElementById('map-section'),
+    chileMap: document.getElementById('chile-map'),
+    regionsTags: document.getElementById('regions-tags'),
+    
+    // Sonido
+    soundSection: document.getElementById('sound-section'),
+    soundPlayBtn: document.getElementById('sound-play-btn'),
+    soundPlayIcon: document.getElementById('sound-play-icon'),
+    soundName: document.getElementById('sound-name'),
+    soundSource: document.getElementById('sound-source'),
+    soundProgressBar: document.getElementById('sound-progress-bar'),
+    speciesAudio: document.getElementById('species-audio'),
+    
+    // PWA
+    pwaInstallBanner: document.getElementById('pwa-install-banner'),
+    pwaInstallAccept: document.getElementById('pwa-install-accept'),
+    pwaInstallDismiss: document.getElementById('pwa-install-dismiss')
 };
 
-/**
- * Inicializa la aplicación
- */
+// ========================================
+// MAPA DE CHILE SVG
+// ========================================
+const CHILE_MAP_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 400" id="chile-svg-map">
+  <path id="region-arica" data-region="Arica y Parinacota" d="M40,5 L60,5 L65,15 L55,20 L40,18 Z" class="region"/>
+  <path id="region-tarapaca" data-region="Tarapacá" d="M40,18 L55,20 L60,35 L45,40 L38,30 Z" class="region"/>
+  <path id="region-antofagasta" data-region="Antofagasta" d="M38,30 L45,40 L55,50 L60,70 L45,75 L35,60 Z" class="region"/>
+  <path id="region-atacama" data-region="Atacama" d="M35,60 L45,75 L50,95 L40,100 L30,85 Z" class="region"/>
+  <path id="region-coquimbo" data-region="Coquimbo" d="M30,85 L40,100 L45,120 L35,125 L25,110 Z" class="region"/>
+  <path id="region-valparaiso" data-region="Valparaíso" d="M25,110 L35,125 L40,145 L30,150 L20,135 Z" class="region"/>
+  <path id="region-metropolitana" data-region="Metropolitana" d="M35,125 L50,130 L55,150 L40,155 L30,145 Z" class="region"/>
+  <path id="region-ohiggins" data-region="O'Higgins" d="M30,150 L40,155 L45,175 L35,180 L25,165 Z" class="region"/>
+  <path id="region-maule" data-region="Maule" d="M25,165 L35,180 L40,200 L30,205 L20,190 Z" class="region"/>
+  <path id="region-nuble" data-region="Ñuble" d="M30,205 L40,200 L50,215 L40,220 L30,212 Z" class="region"/>
+  <path id="region-biobio" data-region="Biobío" d="M20,190 L30,212 L40,230 L30,240 L18,220 Z" class="region"/>
+  <path id="region-araucania" data-region="La Araucanía" d="M18,220 L30,240 L35,260 L25,265 L15,250 Z" class="region"/>
+  <path id="region-losrios" data-region="Los Ríos" d="M15,250 L25,265 L30,280 L22,285 L12,270 Z" class="region"/>
+  <path id="region-loslagos" data-region="Los Lagos" d="M12,270 L22,285 L28,310 L18,320 L8,295 Z" class="region"/>
+  <path id="region-aysen" data-region="Aysén" d="M8,295 L18,320 L25,355 L15,365 L5,335 Z" class="region"/>
+  <path id="region-magallanes" data-region="Magallanes" d="M5,335 L15,365 L30,390 L50,395 L45,380 L20,365 L10,350 Z" class="region"/>
+</svg>
+`;
+
+// Mapeo de nombres de regiones a IDs del SVG
+const REGION_MAP = {
+    "Arica y Parinacota": "region-arica",
+    "Tarapacá": "region-tarapaca",
+    "Antofagasta": "region-antofagasta",
+    "Atacama": "region-atacama",
+    "Coquimbo": "region-coquimbo",
+    "Valparaíso": "region-valparaiso",
+    "Metropolitana": "region-metropolitana",
+    "O'Higgins": "region-ohiggins",
+    "Maule": "region-maule",
+    "Ñuble": "region-nuble",
+    "Biobío": "region-biobio",
+    "La Araucanía": "region-araucania",
+    "Los Ríos": "region-losrios",
+    "Los Lagos": "region-loslagos",
+    "Aysén": "region-aysen",
+    "Magallanes": "region-magallanes"
+};
+
+// ========================================
+// INICIALIZACIÓN
+// ========================================
 function init() {
+    setupThemeToggle();
     setupTypeSelector();
     setupModeSelector();
     setupUploadZone();
@@ -76,33 +160,77 @@ function init() {
     setupAnalyzeButton();
     setupNewSearchButtons();
     setupVoiceRecognition();
+    setupHistory();
+    setupSoundPlayer();
+    setupPWA();
+    loadHistory();
+    
+    // Insertar mapa SVG
+    if (elements.chileMap) {
+        elements.chileMap.innerHTML = CHILE_MAP_SVG;
+    }
 }
 
-/**
- * Configura el selector de tipo (insecto/planta)
- */
+// ========================================
+// MODO OSCURO / CLARO
+// ========================================
+function setupThemeToggle() {
+    // Cargar preferencia guardada
+    const savedTheme = localStorage.getItem('naturia-theme');
+    if (savedTheme === 'dark') {
+        enableDarkMode();
+    }
+    
+    // También respetar preferencia del sistema
+    if (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+        enableDarkMode();
+    }
+    
+    // Click en toggle
+    if (elements.themeToggle) {
+        elements.themeToggle.addEventListener('click', toggleTheme);
+    }
+}
+
+function toggleTheme() {
+    if (state.darkMode) {
+        disableDarkMode();
+    } else {
+        enableDarkMode();
+    }
+}
+
+function enableDarkMode() {
+    state.darkMode = true;
+    document.documentElement.classList.add('dark-theme');
+    localStorage.setItem('naturia-theme', 'dark');
+}
+
+function disableDarkMode() {
+    state.darkMode = false;
+    document.documentElement.classList.remove('dark-theme');
+    localStorage.setItem('naturia-theme', 'light');
+}
+
+// ========================================
+// SELECTOR DE TIPO
+// ========================================
 function setupTypeSelector() {
     elements.btnInsecto.addEventListener('click', () => selectType('insecto'));
     elements.btnPlanta.addEventListener('click', () => selectType('planta'));
 }
 
-/**
- * Selecciona el tipo de análisis
- */
 function selectType(type) {
     state.selectedType = type;
     
-    // Actualizar clases de botones
     elements.btnInsecto.classList.toggle('active', type === 'insecto');
     elements.btnPlanta.classList.toggle('active', type === 'planta');
     
-    // Actualizar ícono del upload
     const uploadIcon = elements.uploadZone.querySelector('.upload-icon');
     if (uploadIcon) {
         uploadIcon.textContent = type === 'insecto' ? '🐛' : '🌿';
     }
     
-    // Actualizar placeholder del input de búsqueda
     if (elements.searchInput) {
         elements.searchInput.placeholder = type === 'insecto' 
             ? 'Ej: Chinita, Abejorro, Madre de culebra...'
@@ -110,25 +238,20 @@ function selectType(type) {
     }
 }
 
-/**
- * Configura el selector de modo (foto/buscar)
- */
+// ========================================
+// SELECTOR DE MODO
+// ========================================
 function setupModeSelector() {
     elements.modeFoto.addEventListener('click', () => selectMode('foto'));
     elements.modeBuscar.addEventListener('click', () => selectMode('buscar'));
 }
 
-/**
- * Selecciona el modo de búsqueda
- */
 function selectMode(mode) {
     state.selectedMode = mode;
     
-    // Actualizar clases de botones
     elements.modeFoto.classList.toggle('active', mode === 'foto');
     elements.modeBuscar.classList.toggle('active', mode === 'buscar');
     
-    // Mostrar/ocultar zonas según el modo
     if (mode === 'foto') {
         elements.uploadZone.style.display = 'block';
         elements.searchZone.style.display = 'none';
@@ -137,26 +260,22 @@ function selectMode(mode) {
         elements.searchZone.style.display = 'block';
     }
     
-    // Reiniciar estados
     resetSearch();
 }
 
-/**
- * Configura la zona de upload con drag & drop
- */
+// ========================================
+// ZONA DE UPLOAD
+// ========================================
 function setupUploadZone() {
-    // Click en zona de upload
     elements.uploadZone.addEventListener('click', () => {
         elements.fileInput.click();
     });
     
-    // Click en botón de upload
     elements.uploadBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         elements.fileInput.click();
     });
     
-    // Cambio en input de archivo
     elements.fileInput.addEventListener('change', handleFileSelect);
     
     // Drag & Drop
@@ -180,46 +299,67 @@ function setupUploadZone() {
     });
 }
 
-/**
- * Configura la zona de búsqueda por texto
- */
+function handleFileSelect(e) {
+    const file = e.target.files[0];
+    if (file) {
+        handleFile(file);
+    }
+}
+
+function handleFile(file) {
+    if (!file.type.startsWith('image/')) {
+        showError('¡Ups! Solo puedo analizar imágenes. Intenta con una foto.');
+        return;
+    }
+    
+    if (file.size > 16 * 1024 * 1024) {
+        showError('¡La imagen es muy grande! Intenta con una más pequeña (máximo 16MB).');
+        return;
+    }
+    
+    state.selectedFile = file;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        elements.previewImage.src = e.target.result;
+        showSection('preview');
+    };
+    reader.readAsDataURL(file);
+}
+
+// ========================================
+// ZONA DE BÚSQUEDA
+// ========================================
 function setupSearchZone() {
-    // Botón de búsqueda
     elements.searchBtn.addEventListener('click', performTextSearch);
     
-    // Enter en el input
     elements.searchInput.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') {
             performTextSearch();
         }
     });
     
-    // Botón de voz
     elements.voiceBtn.addEventListener('click', toggleVoiceRecognition);
 }
 
-/**
- * Configura el reconocimiento de voz
- */
+// ========================================
+// RECONOCIMIENTO DE VOZ
+// ========================================
 function setupVoiceRecognition() {
-    // Verificar soporte de Web Speech API
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     
     if (!SpeechRecognition) {
-        // No hay soporte, ocultar botón de voz
         if (elements.voiceBtn) {
             elements.voiceBtn.style.display = 'none';
         }
         return;
     }
     
-    // Crear instancia de reconocimiento
     state.recognition = new SpeechRecognition();
-    state.recognition.lang = 'es-CL'; // Español de Chile
+    state.recognition.lang = 'es-CL';
     state.recognition.continuous = false;
     state.recognition.interimResults = true;
     
-    // Eventos del reconocimiento
     state.recognition.onstart = () => {
         state.isListening = true;
         elements.voiceBtn.classList.add('listening');
@@ -234,7 +374,6 @@ function setupVoiceRecognition() {
         
         elements.searchInput.value = transcript;
         
-        // Si es resultado final, hacer la búsqueda
         if (event.results[0].isFinal) {
             elements.voiceStatus.textContent = `✅ Entendí: "${transcript}"`;
             setTimeout(() => {
@@ -261,9 +400,6 @@ function setupVoiceRecognition() {
     };
 }
 
-/**
- * Inicia o detiene el reconocimiento de voz
- */
 function toggleVoiceRecognition() {
     if (state.isListening) {
         stopVoiceRecognition();
@@ -272,9 +408,6 @@ function toggleVoiceRecognition() {
     }
 }
 
-/**
- * Inicia el reconocimiento de voz
- */
 function startVoiceRecognition() {
     if (!state.recognition) {
         elements.voiceStatus.textContent = '❌ Tu navegador no soporta reconocimiento de voz';
@@ -289,9 +422,6 @@ function startVoiceRecognition() {
     }
 }
 
-/**
- * Detiene el reconocimiento de voz
- */
 function stopVoiceRecognition() {
     state.isListening = false;
     elements.voiceBtn.classList.remove('listening');
@@ -306,9 +436,9 @@ function stopVoiceRecognition() {
     }
 }
 
-/**
- * Realiza búsqueda por texto
- */
+// ========================================
+// BÚSQUEDA POR TEXTO
+// ========================================
 async function performTextSearch() {
     const query = elements.searchInput.value.trim();
     
@@ -341,6 +471,7 @@ async function performTextSearch() {
             showError(data.error);
         } else {
             showResults(data);
+            saveToHistory(data);
         }
     } catch (error) {
         console.error('Error en búsqueda:', error);
@@ -350,53 +481,13 @@ async function performTextSearch() {
     }
 }
 
-/**
- * Maneja la selección de archivo
- */
-function handleFileSelect(e) {
-    const file = e.target.files[0];
-    if (file) {
-        handleFile(file);
-    }
-}
-
-/**
- * Procesa el archivo seleccionado
- */
-function handleFile(file) {
-    // Validar que sea una imagen
-    if (!file.type.startsWith('image/')) {
-        showError('¡Ups! Solo puedo analizar imágenes. Intenta con una foto.');
-        return;
-    }
-    
-    // Validar tamaño (máximo 16MB)
-    if (file.size > 16 * 1024 * 1024) {
-        showError('¡La imagen es muy grande! Intenta con una más pequeña (máximo 16MB).');
-        return;
-    }
-    
-    state.selectedFile = file;
-    
-    // Mostrar preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        elements.previewImage.src = e.target.result;
-        showSection('preview');
-    };
-    reader.readAsDataURL(file);
-}
-
-/**
- * Configura el botón de analizar
- */
+// ========================================
+// ANÁLISIS DE IMAGEN
+// ========================================
 function setupAnalyzeButton() {
     elements.analyzeBtn.addEventListener('click', analyzeImage);
 }
 
-/**
- * Analiza la imagen con la API
- */
 async function analyzeImage() {
     if (!state.selectedFile || state.isAnalyzing) return;
     
@@ -420,6 +511,7 @@ async function analyzeImage() {
             showError(data.error);
         } else {
             showResults(data);
+            saveToHistory(data);
         }
     } catch (error) {
         console.error('Error al analizar:', error);
@@ -429,20 +521,19 @@ async function analyzeImage() {
     }
 }
 
-/**
- * Muestra los resultados del análisis
- */
+// ========================================
+// MOSTRAR RESULTADOS
+// ========================================
 function showResults(data) {
     // Ícono según tipo
     elements.resultIcon.textContent = data.tipo === 'planta' ? '🌿' : '🐛';
     
-    // Imagen de la especie (si está disponible)
+    // Imagen de la especie
     if (data.imagen_url && elements.resultImageContainer && elements.resultSpeciesImage) {
         elements.resultSpeciesImage.src = data.imagen_url;
         elements.resultSpeciesImage.alt = data.nombre || 'Imagen de la especie';
         elements.resultImageContainer.style.display = 'block';
         
-        // Manejar error de carga de imagen
         elements.resultSpeciesImage.onerror = () => {
             elements.resultImageContainer.style.display = 'none';
         };
@@ -482,16 +573,368 @@ function showResults(data) {
     // Puntos
     const puntos = parseInt(data.puntos) || 50;
     elements.resultPoints.textContent = puntos;
-    
-    // Animación de puntos
     animatePoints(puntos);
+    
+    // Mapa de distribución
+    showDistributionMap(data.regiones || extractRegionsFromHabitat(data.habitat));
+    
+    // Reproductor de sonido
+    showSoundPlayer(data);
     
     showSection('result');
 }
 
-/**
- * Anima el contador de puntos
- */
+// Extraer regiones del texto del hábitat
+function extractRegionsFromHabitat(habitat) {
+    if (!habitat) return [];
+    
+    const regiones = [];
+    const regionNames = Object.keys(REGION_MAP);
+    
+    regionNames.forEach(region => {
+        if (habitat.toLowerCase().includes(region.toLowerCase())) {
+            regiones.push(region);
+        }
+    });
+    
+    // Si menciona "todo Chile", agregar todas las regiones
+    if (habitat.toLowerCase().includes('todo chile') || 
+        habitat.toLowerCase().includes('todo el país')) {
+        return regionNames;
+    }
+    
+    // Si menciona "sur de Chile"
+    if (habitat.toLowerCase().includes('sur de chile')) {
+        return ["Biobío", "La Araucanía", "Los Ríos", "Los Lagos", "Aysén", "Magallanes"];
+    }
+    
+    // Si menciona "norte de Chile"
+    if (habitat.toLowerCase().includes('norte de chile')) {
+        return ["Arica y Parinacota", "Tarapacá", "Antofagasta", "Atacama", "Coquimbo"];
+    }
+    
+    // Si menciona "Chile central"
+    if (habitat.toLowerCase().includes('chile central') || 
+        habitat.toLowerCase().includes('zona central')) {
+        return ["Valparaíso", "Metropolitana", "O'Higgins", "Maule", "Ñuble"];
+    }
+    
+    return regiones;
+}
+
+// ========================================
+// MAPA DE DISTRIBUCIÓN
+// ========================================
+function showDistributionMap(regiones) {
+    if (!elements.mapSection || !elements.chileMap || !elements.regionsTags) return;
+    
+    if (!regiones || regiones.length === 0) {
+        elements.mapSection.style.display = 'none';
+        return;
+    }
+    
+    elements.mapSection.style.display = 'block';
+    
+    // Limpiar estados anteriores
+    const allPaths = elements.chileMap.querySelectorAll('path');
+    allPaths.forEach(path => {
+        path.classList.remove('region-active');
+    });
+    
+    // Activar regiones
+    regiones.forEach(region => {
+        const regionId = REGION_MAP[region];
+        if (regionId) {
+            const path = elements.chileMap.querySelector(`#${regionId}`);
+            if (path) {
+                path.classList.add('region-active');
+            }
+        }
+    });
+    
+    // Mostrar tags de regiones
+    elements.regionsTags.innerHTML = regiones.map(region => 
+        `<span class="region-tag">${region}</span>`
+    ).join('');
+}
+
+// ========================================
+// REPRODUCTOR DE SONIDO
+// ========================================
+function setupSoundPlayer() {
+    if (!elements.soundPlayBtn || !elements.speciesAudio) return;
+    
+    elements.soundPlayBtn.addEventListener('click', toggleSound);
+    
+    elements.speciesAudio.addEventListener('timeupdate', () => {
+        if (elements.speciesAudio.duration) {
+            const progress = (elements.speciesAudio.currentTime / elements.speciesAudio.duration) * 100;
+            elements.soundProgressBar.style.width = `${progress}%`;
+        }
+    });
+    
+    elements.speciesAudio.addEventListener('ended', () => {
+        stopSound();
+    });
+}
+
+function showSoundPlayer(data) {
+    if (!elements.soundSection) return;
+    
+    // Por ahora, mostrar sonido solo si hay URL o es un ave/insecto con sonido conocido
+    const hasSonido = data.sonido_url || 
+        (data.tipo === 'insecto' && data.nombre && 
+         ['grillo', 'cigarra', 'chicharra'].some(s => 
+            data.nombre.toLowerCase().includes(s)));
+    
+    if (hasSonido) {
+        elements.soundSection.style.display = 'block';
+        elements.soundName.textContent = `Sonido de ${data.nombre || 'la especie'}`;
+        
+        if (data.sonido_url) {
+            elements.speciesAudio.src = `/static/sounds/${data.sonido_url}`;
+            elements.soundSource.textContent = 'Fuente: Archivo local';
+        } else {
+            // Placeholder para sonidos futuros
+            elements.soundSection.style.display = 'none';
+        }
+    } else {
+        elements.soundSection.style.display = 'none';
+    }
+}
+
+function toggleSound() {
+    if (state.isPlaying) {
+        stopSound();
+    } else {
+        playSound();
+    }
+}
+
+function playSound() {
+    if (!elements.speciesAudio.src) return;
+    
+    elements.speciesAudio.play();
+    state.isPlaying = true;
+    elements.soundPlayBtn.classList.add('playing');
+    elements.soundPlayIcon.textContent = '⏸️';
+}
+
+function stopSound() {
+    elements.speciesAudio.pause();
+    elements.speciesAudio.currentTime = 0;
+    state.isPlaying = false;
+    elements.soundPlayBtn.classList.remove('playing');
+    elements.soundPlayIcon.textContent = '▶️';
+    elements.soundProgressBar.style.width = '0%';
+}
+
+// ========================================
+// HISTORIAL
+// ========================================
+function setupHistory() {
+    if (!elements.historyToggle || !elements.historyContainer) return;
+    
+    elements.historyToggle.addEventListener('click', toggleHistory);
+    
+    if (elements.historyClearBtn) {
+        elements.historyClearBtn.addEventListener('click', clearHistory);
+    }
+}
+
+function toggleHistory() {
+    state.historyOpen = !state.historyOpen;
+    elements.historyToggle.classList.toggle('active', state.historyOpen);
+    elements.historyContainer.classList.toggle('active', state.historyOpen);
+}
+
+function loadHistory() {
+    const history = getHistory();
+    renderHistory(history);
+}
+
+function getHistory() {
+    try {
+        const data = localStorage.getItem('naturia-history');
+        return data ? JSON.parse(data) : [];
+    } catch (e) {
+        console.error('Error cargando historial:', e);
+        return [];
+    }
+}
+
+function saveToHistory(data) {
+    try {
+        const history = getHistory();
+        
+        // Crear entrada de historial
+        const entry = {
+            id: Date.now(),
+            nombre: data.nombre,
+            cientifico: data.cientifico,
+            tipo: data.tipo,
+            imagen_url: data.imagen_url,
+            fecha: new Date().toISOString(),
+            data: data // Guardar datos completos para poder ver detalles
+        };
+        
+        // Evitar duplicados recientes
+        const isDuplicate = history.some(h => 
+            h.nombre === entry.nombre && 
+            h.cientifico === entry.cientifico
+        );
+        
+        if (!isDuplicate) {
+            // Agregar al inicio
+            history.unshift(entry);
+            
+            // Limitar a 20 entradas
+            if (history.length > 20) {
+                history.pop();
+            }
+            
+            localStorage.setItem('naturia-history', JSON.stringify(history));
+            renderHistory(history);
+        }
+    } catch (e) {
+        console.error('Error guardando en historial:', e);
+    }
+}
+
+function renderHistory(history) {
+    if (!elements.historyList || !elements.historyCount) return;
+    
+    // Actualizar contador
+    elements.historyCount.textContent = history.length > 0 ? `(${history.length})` : '';
+    
+    if (history.length === 0) {
+        elements.historyList.innerHTML = `
+            <div class="history-empty">
+                <div class="history-empty-icon">📭</div>
+                <p>Aún no has buscado ninguna especie.<br>¡Tu primera búsqueda aparecerá aquí!</p>
+            </div>
+        `;
+        return;
+    }
+    
+    elements.historyList.innerHTML = history.map(entry => `
+        <div class="history-item" data-id="${entry.id}">
+            <img class="history-item-image" 
+                 src="${entry.imagen_url || 'data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ccircle cx=%2750%27 cy=%2750%27 r=%2745%27 fill=%27%232E8B57%27/%3E%3Ctext x=%2750%27 y=%2760%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27white%27%3E${entry.tipo === 'planta' ? '🌿' : '🐞'}%3C/text%3E%3C/svg%3E'}"
+                 alt="${entry.nombre}"
+                 onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27%3E%3Ccircle cx=%2750%27 cy=%2750%27 r=%2745%27 fill=%27%232E8B57%27/%3E%3Ctext x=%2750%27 y=%2760%27 font-size=%2740%27 text-anchor=%27middle%27 fill=%27white%27%3E🐞%3C/text%3E%3C/svg%3E'">
+            <div class="history-item-info">
+                <div class="history-item-name">${entry.nombre}</div>
+                <div class="history-item-scientific">${entry.cientifico || ''}</div>
+                <div class="history-item-date">${formatDate(entry.fecha)}</div>
+            </div>
+            <div class="history-item-type">${entry.tipo === 'planta' ? '🌿' : '🐛'}</div>
+        </div>
+    `).join('');
+    
+    // Agregar eventos click
+    elements.historyList.querySelectorAll('.history-item').forEach(item => {
+        item.addEventListener('click', () => {
+            const id = parseInt(item.dataset.id);
+            const entry = history.find(h => h.id === id);
+            if (entry && entry.data) {
+                showResults(entry.data);
+                toggleHistory(); // Cerrar historial
+            }
+        });
+    });
+}
+
+function formatDate(isoDate) {
+    const date = new Date(isoDate);
+    const now = new Date();
+    const diff = now - date;
+    
+    // Menos de 1 minuto
+    if (diff < 60000) return 'Hace un momento';
+    
+    // Menos de 1 hora
+    if (diff < 3600000) {
+        const mins = Math.floor(diff / 60000);
+        return `Hace ${mins} minuto${mins > 1 ? 's' : ''}`;
+    }
+    
+    // Menos de 24 horas
+    if (diff < 86400000) {
+        const hours = Math.floor(diff / 3600000);
+        return `Hace ${hours} hora${hours > 1 ? 's' : ''}`;
+    }
+    
+    // Más de 24 horas
+    return date.toLocaleDateString('es-CL', { day: 'numeric', month: 'short' });
+}
+
+function clearHistory() {
+    if (confirm('¿Estás seguro de que quieres borrar todo el historial?')) {
+        localStorage.removeItem('naturia-history');
+        renderHistory([]);
+    }
+}
+
+// ========================================
+// PWA
+// ========================================
+function setupPWA() {
+    // Capturar evento de instalación
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        state.deferredPrompt = e;
+        
+        // Mostrar banner después de un poco de uso
+        setTimeout(() => {
+            showPWABanner();
+        }, 30000); // Después de 30 segundos
+    });
+    
+    // Botones del banner
+    if (elements.pwaInstallAccept) {
+        elements.pwaInstallAccept.addEventListener('click', installPWA);
+    }
+    
+    if (elements.pwaInstallDismiss) {
+        elements.pwaInstallDismiss.addEventListener('click', dismissPWABanner);
+    }
+}
+
+function showPWABanner() {
+    if (!state.deferredPrompt || !elements.pwaInstallBanner) return;
+    
+    // No mostrar si ya se descartó recientemente
+    const dismissed = localStorage.getItem('pwa-dismissed');
+    if (dismissed) {
+        const dismissedDate = new Date(dismissed);
+        const now = new Date();
+        // No mostrar por 7 días después de descartado
+        if (now - dismissedDate < 7 * 24 * 60 * 60 * 1000) return;
+    }
+    
+    elements.pwaInstallBanner.classList.add('show');
+}
+
+async function installPWA() {
+    if (!state.deferredPrompt) return;
+    
+    state.deferredPrompt.prompt();
+    const { outcome } = await state.deferredPrompt.userChoice;
+    
+    console.log(`PWA instalación: ${outcome}`);
+    state.deferredPrompt = null;
+    elements.pwaInstallBanner.classList.remove('show');
+}
+
+function dismissPWABanner() {
+    elements.pwaInstallBanner.classList.remove('show');
+    localStorage.setItem('pwa-dismissed', new Date().toISOString());
+}
+
+// ========================================
+// ANIMACIÓN DE PUNTOS
+// ========================================
 function animatePoints(finalValue) {
     let current = 0;
     const increment = Math.ceil(finalValue / 30);
@@ -505,23 +948,25 @@ function animatePoints(finalValue) {
     }, 30);
 }
 
-/**
- * Configura los botones de nueva búsqueda
- */
+// ========================================
+// BOTONES DE NUEVA BÚSQUEDA
+// ========================================
 function setupNewSearchButtons() {
     elements.newSearchBtn.addEventListener('click', resetSearch);
     elements.errorRetryBtn.addEventListener('click', resetSearch);
 }
 
-/**
- * Reinicia la búsqueda
- */
 function resetSearch() {
     state.selectedFile = null;
     elements.fileInput.value = '';
     elements.previewImage.src = '';
     elements.searchInput.value = '';
     elements.voiceStatus.textContent = '';
+    
+    // Detener audio si está reproduciendo
+    if (state.isPlaying) {
+        stopSound();
+    }
     
     if (state.selectedMode === 'foto') {
         showSection('upload');
@@ -530,19 +975,15 @@ function resetSearch() {
     }
 }
 
-/**
- * Muestra un error
- */
+// ========================================
+// MANEJO DE ERRORES Y SECCIONES
+// ========================================
 function showError(message) {
     elements.errorMessage.textContent = message;
     showSection('error');
 }
 
-/**
- * Muestra una sección específica y oculta las demás
- */
 function showSection(section) {
-    // Ocultar todas las secciones
     elements.uploadZone.style.display = 'none';
     elements.searchZone.style.display = 'none';
     elements.previewContainer.classList.remove('active');
@@ -572,5 +1013,7 @@ function showSection(section) {
     }
 }
 
-// Iniciar la aplicación cuando el DOM esté listo
+// ========================================
+// INICIAR APLICACIÓN
+// ========================================
 document.addEventListener('DOMContentLoaded', init);

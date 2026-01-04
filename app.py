@@ -74,6 +74,14 @@ def analizar():
         if 'error' in resultado:
             return jsonify(resultado), 200  # Devolvemos 200 porque el error es del contenido, no del servidor
         
+        # Buscar imagen de la especie identificada
+        imagen_url = obtener_imagen_especie(
+            resultado.get('cientifico', ''),
+            resultado.get('nombre', ''),
+            tipo
+        )
+        resultado['imagen_url'] = imagen_url
+        
         return jsonify(resultado), 200
         
     except Exception as e:

@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 400" id="chile-svg-map">
+  <!-- Mapa simplificado de Chile con las 16 regiones -->
+  <!-- De norte a sur -->
+  
+  <!-- Arica y Parinacota -->
+  <path id="region-arica" data-region="Arica y Parinacota" 
+        d="M40,5 L60,5 L65,15 L55,20 L40,18 Z" 
+        class="region"/>
+  
+  <!-- Tarapacá -->
+  <path id="region-tarapaca" data-region="Tarapacá" 
+        d="M40,18 L55,20 L60,35 L45,40 L38,30 Z" 
+        class="region"/>
+  
+  <!-- Antofagasta -->
+  <path id="region-antofagasta" data-region="Antofagasta" 
+        d="M38,30 L45,40 L55,50 L60,70 L45,75 L35,60 Z" 
+        class="region"/>
+  
+  <!-- Atacama -->
+  <path id="region-atacama" data-region="Atacama" 
+        d="M35,60 L45,75 L50,95 L40,100 L30,85 Z" 
+        class="region"/>
+  
+  <!-- Coquimbo -->
+  <path id="region-coquimbo" data-region="Coquimbo" 
+        d="M30,85 L40,100 L45,120 L35,125 L25,110 Z" 
+        class="region"/>
+  
+  <!-- Valparaíso -->
+  <path id="region-valparaiso" data-region="Valparaíso" 
+        d="M25,110 L35,125 L40,145 L30,150 L20,135 Z" 
+        class="region"/>
+  
+  <!-- Metropolitana -->
+  <path id="region-metropolitana" data-region="Metropolitana" 
+        d="M35,125 L50,130 L55,150 L40,155 L30,145 Z" 
+        class="region"/>
+  
+  <!-- O'Higgins -->
+  <path id="region-ohiggins" data-region="O'Higgins" 
+        d="M30,150 L40,155 L45,175 L35,180 L25,165 Z" 
+        class="region"/>
+  
+  <!-- Maule -->
+  <path id="region-maule" data-region="Maule" 
+        d="M25,165 L35,180 L40,200 L30,205 L20,190 Z" 
+        class="region"/>
+  
+  <!-- Ñuble -->
+  <path id="region-nuble" data-region="Ñuble" 
+        d="M30,205 L40,200 L50,215 L40,220 L30,212 Z" 
+        class="region"/>
+  
+  <!-- Biobío -->
+  <path id="region-biobio" data-region="Biobío" 
+        d="M20,190 L30,212 L40,230 L30,240 L18,220 Z" 
+        class="region"/>
+  
+  <!-- La Araucanía -->
+  <path id="region-araucania" data-region="La Araucanía" 
+        d="M18,220 L30,240 L35,260 L25,265 L15,250 Z" 
+        class="region"/>
+  
+  <!-- Los Ríos -->
+  <path id="region-losrios" data-region="Los Ríos" 
+        d="M15,250 L25,265 L30,280 L22,285 L12,270 Z" 
+        class="region"/>
+  
+  <!-- Los Lagos -->
+  <path id="region-loslagos" data-region="Los Lagos" 
+        d="M12,270 L22,285 L28,310 L18,320 L8,295 Z" 
+        class="region"/>
+  
+  <!-- Aysén -->
+  <path id="region-aysen" data-region="Aysén" 
+        d="M8,295 L18,320 L25,355 L15,365 L5,335 Z" 
+        class="region"/>
+  
+  <!-- Magallanes -->
+  <path id="region-magallanes" data-region="Magallanes" 
+        d="M5,335 L15,365 L30,390 L50,395 L45,380 L20,365 L10,350 Z" 
+        class="region"/>
+</svg>

@@ -15,9 +15,9 @@ import io
 MODELOS_DISPONIBLES = [
     'gemini-2.5-flash',
     'gemini-2.0-flash',
+    'gemini-1.5-flash',
     'gemini-flash-latest',
     'gemini-pro-latest',
-    'gemini-1.5-flash',
 ]
 
 # Configurar la API de Gemini
@@ -176,18 +176,18 @@ def analizar_imagen(image_data: bytes, tipo: str = "insecto") -> dict:
                     print(f"❌ Error con {modelo}: {resultado}")
                     errores.append(f"{modelo}: {resultado}")
         
-        # Si todos los modelos fallaron por cuota
-        if len(modelos_con_cuota_excedida) == len(MODELOS_DISPONIBLES):
-            return {
-                "error": "⏰ ¡Has usado todas las consultas gratuitas de hoy! Intenta mañana o usa una nueva API Key. Visita https://aistudio.google.com/app/apikey para obtener una nueva.",
+        # Si todos los modelos fallaron, analizar por qué
+        if modelos_con_cuota_excedida:
+             return {
+                "error": "⏰ ¡Has usado todas las consultas gratuitas de hoy! El límite de la API Free de Google Gemini se ha alcanzado. Intenta de nuevo en unos minutos o mañana.",
                 "tipo": tipo,
                 "codigo_error": "QUOTA_EXCEEDED"
             }
         
         # Revisar si hubo errores de API Key
-        if errores and any("key_error" in err for err in errores):
+        if errores and any("key_error" in err or "400" in err for err in errores):
              return {
-                "error": "🔑 Tu API Key de Google Gemini parece haber expirado o es inválida. Por favor, genera una nueva en https://aistudio.google.com/app/apikey y actualiza el archivo .env",
+                "error": "🔑 Tu API Key de Google Gemini parece haber expirado o es inválida. Por favor, genera una nueva en https://aistudio.google.com/app/apikey",
                 "tipo": tipo,
                 "codigo_error": "API_KEY_ERROR"
             }
@@ -374,18 +374,18 @@ def buscar_por_texto(consulta: str, tipo: str = "insecto") -> dict:
                 else:
                     errores.append(f"{modelo}: {resultado}")
         
-        # Si todos los modelos fallaron por cuota
-        if len(modelos_con_cuota_excedida) == len(MODELOS_DISPONIBLES):
+        # Si todos los modelos fallaron, analizar por qué
+        if modelos_con_cuota_excedida:
             return {
-                "error": "⏰ ¡Has usado todas las consultas gratuitas de hoy! Intenta mañana.",
+                "error": "⏰ ¡Has usado todas las consultas gratuitas de hoy! El límite de la API Free de Google Gemini se ha alcanzado. Intenta de nuevo en unos minutos o mañana.",
                 "tipo": tipo,
                 "codigo_error": "QUOTA_EXCEEDED"
             }
         
         # Revisar si hubo errores de API Key
-        if errores and any("key_error" in err for err in errores):
+        if errores and any("key_error" in err or "400" in err for err in errores):
              return {
-                "error": "🔑 Tu API Key de Google Gemini parece haber expirado o es inválida. Por favor, genera una nueva en https://aistudio.google.com/app/apikey y actualiza el archivo .env",
+                "error": "🔑 Tu API Key de Google Gemini parece haber expirado o es inválida. Por favor, genera una nueva en https://aistudio.google.com/app/apikey",
                 "tipo": tipo,
                 "codigo_error": "API_KEY_ERROR"
             }

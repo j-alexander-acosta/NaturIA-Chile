@@ -217,6 +217,14 @@ def index():
     """Página principal de la aplicación."""
     return render_template('index.html')
 
+@app.route('/favicon.ico')
+def favicon():
+    import os
+    from flask import send_from_directory
+    return send_from_directory(os.path.join(app.root_path, 'static', 'icons'),
+                               'icon-192.png', mimetype='image/png')
+
+
 
 @app.route('/analizar', methods=['POST'])
 def analizar():

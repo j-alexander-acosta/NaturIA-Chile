@@ -530,11 +530,11 @@ async function performTextSearch() {
         });
         
         let data;
+        const text = await response.text();
         try {
-            data = await response.json();
+            data = JSON.parse(text);
         } catch (e) {
             console.error('Error parseando JSON (Búsqueda):', e);
-            const text = await response.text();
             console.error('Respuesta cruda del servidor:', text);
             throw new Error('La respuesta del servidor no es válida (posible tiempo de espera agotado).');
         }
@@ -569,6 +569,55 @@ function setupAnalyzeButton() {
     elements.analyzeBtn.addEventListener('click', analyzeImage);
 }
 
+// Función para redimensionar y comprimir imágenes en el cliente
+function compressImage(file, maxWidth = 1024, maxHeight = 1024, quality = 0.8) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const compressedFile = new File([blob], file.name.replace(/\.\w+$/, '.jpg'), {
+                            type: 'image/jpeg',
+                            lastModified: Date.now()
+                        });
+                        resolve(compressedFile);
+                    } else {
+                        reject(new Error('No se pudo comprimir la imagen.'));
+                    }
+                }, 'image/jpeg', quality);
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
+    });
+}
+
 async function analyzeImage() {
     if (!state.selectedFile || state.isAnalyzing) return;
     
@@ -577,8 +626,21 @@ async function analyzeImage() {
     showSection('loader');
     
     try {
+        let fileToUpload = state.selectedFile;
+        
+        // Optimizar la imagen si es mayor a 1MB para evitar Gateway Timeout (502)
+        if (state.selectedFile.size > 1024 * 1024) {
+            elements.loaderText.textContent = '⚡ Optimizando imagen para un envío más rápido...';
+            try {
+                fileToUpload = await compressImage(state.selectedFile);
+                console.log(`Imagen optimizada de ${(state.selectedFile.size / (1024*1024)).toFixed(2)}MB a ${(fileToUpload.size / (1024*1024)).toFixed(2)}MB`);
+            } catch (compressError) {
+                console.error('Error optimizando imagen, se usará la original:', compressError);
+            }
+        }
+        
         const formData = new FormData();
-        formData.append('imagen', state.selectedFile);
+        formData.append('imagen', fileToUpload);
         formData.append('tipo', state.selectedType);
         
         const response = await fetch('/analizar', {
@@ -587,11 +649,11 @@ async function analyzeImage() {
         });
         
         let data;
+        const text = await response.text();
         try {
-            data = await response.json();
+            data = JSON.parse(text);
         } catch (e) {
             console.error('Error parseando JSON (Identificación):', e);
-            const text = await response.text();
             console.error('Respuesta cruda del servidor:', text);
             throw new Error('La respuesta del servidor no es válida (posible tiempo de espera agotado).');
         }
